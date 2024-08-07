@@ -23,5 +23,6 @@ public class UserRequest {
     private String placeOfOrigin;
     private String phoneNumber;
     private String email;
+    private String password;
 
 }

@@ -1,10 +1,17 @@
 package org.bankingapp.bankingapplication.service.impl;
 
+import lombok.AllArgsConstructor;
+import org.bankingapp.bankingapplication.config.JwtTokenProvider;
 import org.bankingapp.bankingapplication.dto.*;
+import org.bankingapp.bankingapplication.entity.Role;
 import org.bankingapp.bankingapplication.entity.User;
 import org.bankingapp.bankingapplication.repository.UserRepository;
 import org.bankingapp.bankingapplication.utils.AccountUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +22,7 @@ import java.math.BigInteger;
 //this user service will be talking to the db
 
 @Service
+@AllArgsConstructor
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -25,6 +33,16 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     TransactionService transactionService;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @Autowired
+    AuthenticationManager authenticationManager;
+
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
+
 
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
@@ -53,6 +71,8 @@ public class UserServiceImpl implements UserService {
                 .accountBalance(BigDecimal.ZERO)
                 .phoneNumber(userRequest.getPhoneNumber())
                 .status("ACTIVE")
+                .role(Role.valueOf("ROLE_ADMIN"))
+                .password(passwordEncoder.encode(userRequest.getPassword()))
                 .build();
 
         User savedUser = userRepository.save(newUser);
@@ -76,6 +96,8 @@ public class UserServiceImpl implements UserService {
                 .build();
 
     }
+
+
 
     @Override
     public BankResponse balanceEnquiry(EnquiryRequest request) {
@@ -274,9 +296,29 @@ public class UserServiceImpl implements UserService {
 
     }
 
+//login
+    public BankResponse login(LoginDto loginDto){
+        Authentication authentication = null;
+        authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+        );
+
+
+        EmailDetails loginAlert = EmailDetails.builder()
+                .subject("You are logged in!")
+                .recipient(loginDto.getEmail())
+                .messageBody("You logged into your account. If you did not initiate this request. Please contact us.")
+                .build();
+
+        emailService.sendEmailAlert(loginAlert);
+        return BankResponse.builder()
+                .responseCode("Login Success")
+                .responseMessage(jwtTokenProvider.generateToken(authentication))
+                .build();
+    }
+
 
     //balance inquiry, name enquiry, debit, transfer (2 way transaction debit one acct and credit one act)
-
 
 
 }

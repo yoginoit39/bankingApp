@@ -4,6 +4,7 @@ package org.bankingapp.bankingapplication.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.java.Log;
 import org.bankingapp.bankingapplication.dto.*;
 import org.bankingapp.bankingapplication.service.impl.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,4 +64,9 @@ public class UserController {
         return userService.transfer(request);
     }
 
+    @PostMapping("/login")
+    public BankResponse login (@RequestBody LoginDto loginDto){
+        return userService.login(loginDto);
+
+    }
 }
